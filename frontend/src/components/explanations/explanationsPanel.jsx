@@ -1,65 +1,92 @@
-
-import {useState, useEffect} from 'react';
-
-
+import { useState, useEffect } from "react";
 
 function Explanations() {
+  const [explanationsData, setExplanationsData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-             console.log("COMPONENT RENDERED")
+  useEffect(() => {
+    async function fetchExplanations() {
+      try {
+        const response = await fetch("http://127.0.0.1:8000/explanations");
+        const data = await response.json();
 
+        setExplanationsData(data.results || []);
+        setLoading(false);
 
-
-    const [explanationsData, setExplanationsData] = useState([])
-
-
-    const [loading, setLoading] = useState(true)
-    const [error, setError] = useState("")
-
-
-    useEffect(() => {
-
-
-
-    console.log("EXPLANATIONS useEffect running")
-        async function fetchExplanations() {
-            try {
-                const response = await fetch ("http://127.0.0.1:8000/explanations")
-                const data = await response.json()
-               console.log(data.results)
-                setExplanationsData(data.results)
-                setLoading(false)
-            }
-            catch(error) {
-                console.log(error)
-                setError("Failed to fetch explanations")
-                setLoading(false)
-            }
-    }fetchExplanations()}, [])
-
-    if(loading) {
-        return <h2>Fetching explanations...</h2>
+      } catch (error) {
+        setError("Failed to fetch explanations");
+        setLoading(false);
+      }
     }
 
-    if(error) {
-        return <h2>{error}</h2>
-    }
+    fetchExplanations();
+  }, []);
 
+  /* LOADING STATE */
+  if (loading) {
     return (
-        <div>
-            <h1>explanations is running</h1>
-{
+      <div className="card">
+        <h3>Generating AI Insights...</h3>
+        <p style={{ color: "#94a3b8" }}>
+          Analyzing anomalies using RAG pipeline
+        </p>
+      </div>
+    );
+  }
 
-            explanationsData.map((item, index) => (
-                <div key = {index}>
-                <h3>{item.service}</h3>
+  /* ERROR STATE */
+  if (error) {
+    return (
+      <div className="card">
+        <h3 style={{ color: "#ef4444" }}>⚠ Error</h3>
+        <p>{error}</p>
+      </div>
+    );
+  }
 
-                <p>{item.explanation}</p>
-                </div>
-            ))
+  return (
+    <div className="card">
 
-        }
-        </div>
-    )
+      {/* HEADER */}
+      <div className="panel-header">
+        <h2>AI Insights</h2>
+        <span className="live-dot">● ANALYZED</span>
+      </div>
+
+      <p style={{ color: "#94a3b8" }}>
+        AI-generated explanations for system anomalies using RAG pipeline
+      </p>
+
+      {/* INSIGHTS */}
+      <div style={{ marginTop: 15 }}>
+        {explanationsData.length === 0 ? (
+          <p style={{ color: "#94a3b8" }}>
+            No insights available
+          </p>
+        ) : (
+          explanationsData.map((item, index) => (
+            <div
+              key={index}
+              className="alert"
+              style={{
+                marginBottom: 10
+              }}
+            >
+              <h3 style={{ margin: "0 0 6px 0" }}>
+                {item.service || "Unknown Service"}
+              </h3>
+
+              <p style={{ margin: 0, color: "#cbd5e1" }}>
+                {item.explanation}
+              </p>
+            </div>
+          ))
+        )}
+      </div>
+
+    </div>
+  );
 }
 
 export default Explanations;

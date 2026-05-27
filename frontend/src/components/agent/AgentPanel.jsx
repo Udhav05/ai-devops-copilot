@@ -1,71 +1,98 @@
 import { useState } from "react";
 
 function AgentPanel() {
-  const [actions, setActions] = useState([]);
-  const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [response, setResponse] = useState(null);
   const [error, setError] = useState("");
 
-  async function runAgent() {
-    try {
-      setLoading(true);
+  const runAgent = async () => {
+    setLoading(true);
+    setError("");
+    setResponse(null);
 
-      const response = await fetch("http://127.0.0.1:8000/agent/run", {
+    try {
+      const res = await fetch("http://127.0.0.1:8000/agent/run", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        }
       });
 
-      const data = await response.json();
+      if (!res.ok) {
+        throw new Error("Failed to run agent");
+      }
 
-      console.log("AGENT DATA:", data);
+      const data = await res.json();
+      setResponse(data);
 
-      setActions(data.actions || []);
-      setResults(data.results || []);
-
-      setLoading(false);
-    } catch (error) {
-      console.log(error);
-
-      setError("Failed to fetch agent data");
-
+    } catch (err) {
+      setError(err.message);
+    } finally {
       setLoading(false);
     }
-  }
-
-  if (loading) {
-    return <h2>Running agent...</h2>;
-  }
-
-  if (error) {
-    return <h2>{error}</h2>;
-  }
+  };
 
   return (
-    <div>
-      <h1>Agent Panel</h1>
+    <div className="card">
 
-      <button onClick={runAgent}>Run Agent</button>
+      {/* HEADER */}
+      <div className="panel-header">
+        <h2>AI DevOps Agent</h2>
+        <span className="live-dot">● READY</span>
+      </div>
 
-      <h2>Actions</h2>
+      <p style={{ color: "#94a3b8" }}>
+        Autonomous system that analyzes logs and triggers actions
+      </p>
 
-    
+      {/* BUTTON */}
+      <button
+        onClick={runAgent}
+        disabled={loading}
+        style={{
+          marginTop: 12,
+          padding: "10px 14px",
+          borderRadius: 8,
+          border: "none",
+          cursor: "pointer",
+          background: "#2563eb",
+          color: "white",
+          fontWeight: 600
+        }}
+      >
+        {loading ? "Running Agent..." : "Run AI Agent"}
+      </button>
 
-      {actions?.map((action, index) => (
-        <div key={index}>
-          <p>{action.tool}</p>
-
-          <pre>{JSON.stringify(action.args, null, 2)}</pre>
+      {/* ERROR */}
+      {error && (
+        <div style={{ marginTop: 10, color: "#ef4444" }}>
+          ⚠ {error}
         </div>
-      ))}
+      )}
 
+      {/* RESPONSE */}
+      {response && (
+        <div style={{ marginTop: 15 }}>
 
-      
-      <h2>Results</h2>
+          {/* ACTIONS */}
+          <h3>Actions Taken</h3>
+          {response.actions?.map((action, i) => (
+            <div key={i} className="alert">
+              ⚙ {action.tool}
+            </div>
+          ))}
 
-      {results?.map((result, index) => (
-        <div key={index}>
-          <p>{JSON.stringify(result)}</p>
+          {/* RESULTS */}
+          <h3 style={{ marginTop: 10 }}>Results</h3>
+          {response.results?.map((result, i) => (
+            <div key={i} className="alert">
+              ✅ {JSON.stringify(result)}
+            </div>
+          ))}
+
         </div>
-      ))}
+      )}
+
     </div>
   );
 }
